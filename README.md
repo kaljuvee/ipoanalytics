@@ -1,26 +1,44 @@
 # IPO Analytics - Market Heatmap Dashboard
 
-A comprehensive Streamlit application that visualizes Initial Public Offering (IPO) performance data using an interactive market heatmap similar to Finviz. The application tracks IPOs from NASDAQ and NYSE exchanges, showing performance since listing with sector-based organization and market cap-weighted visualization.
+A comprehensive Streamlit application that visualizes Initial Public Offering (IPO) performance data using an interactive market heatmap similar to Finviz. The application tracks IPOs from multiple exchanges with country-based filtering, showing performance since listing with sector-based organization and market cap-weighted visualization.
 
 ## 🚀 Features
 
 - **Interactive Market Heatmap**: Treemap visualization showing IPO performance with color-coded returns
+- **Country-Based Filtering**: Filter IPOs by country with support for US and European markets
 - **Real-time Data**: Fetches live data from Yahoo Finance API
 - **SQLite Database**: Local data storage for efficient querying and caching
 - **Sector Analysis**: Performance breakdown by industry sectors
-- **Exchange Filtering**: Filter by NASDAQ, NYSE, or both exchanges
-- **Market Cap Filtering**: Adjustable minimum market capitalization filters
+- **Exchange Filtering**: Filter by multiple exchanges (NASDAQ, NYSE, European exchanges)
 - **Performance Metrics**: Detailed statistics including top/worst performers
-- **Hover Information**: Comprehensive details including IPO date, market cap, and performance
+- **Hover Information**: Comprehensive details including IPO date, country, exchange, and performance
+
+## 🌍 Supported Markets
+
+### United States
+- NASDAQ, NYSE, AMEX
+
+### European Markets
+- **United Kingdom**: LSE, AIM, LON
+- **Germany**: XETRA, FSE, FRA, BER
+- **France**: EPA, EURONEXT, PAR
+- **Netherlands**: AMS
+- **Italy**: BIT, MIL
+- **Spain**: BME, MCE, MAD
+- **Switzerland**: SIX, VTX
+- **Nordic Countries**: STO (Sweden), HEL (Finland), CPH (Denmark), OSL (Norway)
+- **Other European**: WSE (Poland), BUD (Hungary), PRA (Czech Republic), ATH (Greece), LIS (Portugal), BRU (Belgium), VIE (Austria), TAL (Estonia), RIG (Latvia), VSE (Lithuania)
 
 ## 📊 Visualization Details
 
 The heatmap displays:
+- **Hierarchy**: All IPOs → Country → Sector → Individual Companies
 - **Rectangle Size**: Proportional to current market capitalization
 - **Color Coding**: Performance since IPO (green = positive, red = negative)
 - **Hover Data**: 
   - Company ticker and name
-  - Sector and exchange
+  - Country and exchange
+  - Sector classification
   - IPO Date (First Listing)
   - Current market capitalization
   - Performance percentage since IPO
@@ -33,9 +51,10 @@ The heatmap displays:
 
 ### Setup Instructions
 
-1. **Clone or download the project**:
+1. **Clone the repository**:
    ```bash
-   cd IPOAnalytics
+   git clone https://github.com/kaljuvee/ipoanalytics.git
+   cd ipoanalytics
    ```
 
 2. **Install dependencies**:
@@ -75,9 +94,9 @@ IPOAnalytics/
 
 ### Navigation
 - **Year Selection**: Choose which year's IPOs to analyze
-- **Exchange Filter**: Select NASDAQ, NYSE, or both
+- **Country Filter**: Select specific countries to analyze
+- **Exchange Filter**: Select specific exchanges within countries
 - **Sector Filter**: Filter by specific industry sectors
-- **Market Cap Filter**: Set minimum market capitalization threshold
 
 ### Data Refresh
 - Use the "Refresh IPO Data" button to update with latest market data
@@ -107,12 +126,14 @@ IPOAnalytics/
 
 ### Data Processing
 - Fetches stock information using Yahoo Finance API
+- Maps exchanges to countries for geographic analysis
 - Calculates performance metrics since IPO date
 - Handles missing data and delisted securities gracefully
 - Implements rate limiting to respect API constraints
 
 ### Visualization
 - Uses Plotly Express for interactive treemap generation
+- Country-based hierarchical organization
 - Custom color scaling for performance visualization
 - Responsive design with container-width charts
 - Detailed hover tooltips with comprehensive information
@@ -146,12 +167,12 @@ The application includes sample IPO data from 2024, including:
 2. **Data Accuracy**: Dependent on Yahoo Finance data quality and availability
 3. **Historical Scope**: Limited to companies with available trading history
 4. **Rate Limits**: Yahoo Finance API has usage restrictions
-5. **Market Coverage**: Currently focuses on US exchanges (NASDAQ/NYSE)
+5. **European Data**: Infrastructure ready but requires European IPO data integration
 
 ## 🔮 Future Enhancements
 
 - **Automated IPO Discovery**: Integration with dedicated IPO data providers
-- **International Exchanges**: Support for European and Asian markets
+- **European IPO Data**: Full integration with European market data
 - **Advanced Analytics**: Volatility metrics, sector rotation analysis
 - **Real-time Updates**: Live data streaming and automatic refresh
 - **Export Functionality**: CSV/Excel export of filtered data
@@ -161,7 +182,7 @@ The application includes sample IPO data from 2024, including:
 
 To extend the application:
 
-1. **Add New Exchanges**: Modify `yfinance_util.py` to include additional exchanges
+1. **Add New Exchanges**: Modify `EXCHANGE_COUNTRY_MAP` in `yfinance_util.py`
 2. **Enhanced Metrics**: Add new calculations in the performance metrics module
 3. **UI Improvements**: Customize the Streamlit interface in `Home.py`
 4. **Data Sources**: Integrate additional financial data APIs

@@ -7,6 +7,69 @@ import time
 from typing import List, Dict, Optional
 import logging
 
+# Exchange to country mapping
+EXCHANGE_COUNTRY_MAP = {
+    # United States
+    'NASDAQ': 'United States',
+    'NYSE': 'United States',
+    'AMEX': 'United States',
+    
+    # United Kingdom
+    'LSE': 'United Kingdom',
+    'AIM': 'United Kingdom',
+    'LON': 'United Kingdom',
+    
+    # Germany
+    'XETRA': 'Germany',
+    'FSE': 'Germany',
+    'GETTEX': 'Germany',
+    'FRA': 'Germany',
+    'BER': 'Germany',
+    
+    # France
+    'EPA': 'France',
+    'EURONEXT': 'France',
+    'PAR': 'France',
+    
+    # Netherlands
+    'AMS': 'Netherlands',
+    
+    # Italy
+    'BIT': 'Italy',
+    'MIL': 'Italy',
+    
+    # Spain
+    'BME': 'Spain',
+    'MCE': 'Spain',
+    'MAD': 'Spain',
+    
+    # Switzerland
+    'SIX': 'Switzerland',
+    'VTX': 'Switzerland',
+    
+    # Nordic Countries
+    'STO': 'Sweden',
+    'HEL': 'Finland',
+    'CPH': 'Denmark',
+    'OSL': 'Norway',
+    
+    # Other European
+    'WSE': 'Poland',
+    'BUD': 'Hungary',
+    'PRA': 'Czech Republic',
+    'ATH': 'Greece',
+    'LIS': 'Portugal',
+    'BRU': 'Belgium',
+    'VIE': 'Austria',
+    'TAL': 'Estonia',
+    'RIG': 'Latvia',
+    'VSE': 'Lithuania'
+}
+
+def get_country_from_exchange(exchange: str) -> str:
+    """Get country name from exchange code"""
+    return EXCHANGE_COUNTRY_MAP.get(exchange, 'Unknown')
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

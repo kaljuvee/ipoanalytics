@@ -135,6 +135,18 @@ if not df.empty:
     st.session_state.data_loaded = True
     st.session_state.ipo_data = df
     
+    # Add country information to dataframe
+    from yfinance_util import get_country_from_exchange
+    df['country'] = df['exchange'].apply(get_country_from_exchange)
+    
+    # Country filter
+    available_countries = sorted(df['country'].unique().tolist())
+    selected_countries = st.sidebar.multiselect(
+        "Select Countries",
+        options=available_countries,
+        default=available_countries
+    )
+    
     # Exchange filter
     available_exchanges = df['exchange'].unique().tolist()
     selected_exchanges = st.sidebar.multiselect(
@@ -151,20 +163,11 @@ if not df.empty:
         default=available_sectors
     )
     
-    # Market cap filter
-    min_market_cap = st.sidebar.number_input(
-        "Minimum Market Cap (Millions)",
-        min_value=0,
-        max_value=int(df['market_cap'].max() / 1e6) if not df.empty else 1000,
-        value=0,
-        step=100
-    )
-    
     # Apply filters
     filtered_df = df[
+        (df['country'].isin(selected_countries)) &
         (df['exchange'].isin(selected_exchanges)) &
-        (df['sector'].isin(selected_sectors)) &
-        (df['market_cap'] >= min_market_cap * 1e6)
+        (df['sector'].isin(selected_sectors))
     ]
     
 else:
@@ -254,25 +257,27 @@ else:
         treemap_df['hover_text'] = treemap_df.apply(lambda row: 
             f"<b>{row['ticker']}</b><br>" +
             f"{row['company_name']}<br>" +
-            f"Sector: {row['sector']}<br>" +
+            f"Country: {row['country']}<br>" +
             f"Exchange: {row['exchange']}<br>" +
+            f"Sector: {row['sector']}<br>" +
             f"IPO Date (First Listing): {row['ipo_date_formatted']}<br>" +
             f"Market Cap: {format_market_cap(row['market_cap'])}<br>" +
             f"Performance: {format_percentage(row['price_change_since_ipo'])}", 
             axis=1
         )
         
-        # Create treemap
+        # Create treemap with country hierarchy
         fig = px.treemap(
             treemap_df,
-            path=[px.Constant("All IPOs"), "sector", "ticker"],
+            path=[px.Constant("All IPOs"), "country", "sector", "ticker"],
             values="market_cap",
             color="price_change_since_ipo",
             hover_data={
                 'market_cap': ':,.0f',
                 'price_change_since_ipo': ':.2%',
                 'company_name': True,
-                'ipo_date_formatted': True
+                'ipo_date_formatted': True,
+                'exchange': True
             },
             color_continuous_scale="RdYlGn",
             color_continuous_midpoint=0,
@@ -384,7 +389,7 @@ else:
         display_df['IPO Date'] = pd.to_datetime(display_df['ipo_date']).dt.strftime('%Y-%m-%d')
         
         st.dataframe(
-            display_df[['ticker', 'company_name', 'sector', 'exchange', 'IPO Date', 'Performance', 'Market Cap']],
+            display_df[['ticker', 'company_name', 'country', 'exchange', 'sector', 'IPO Date', 'Performance', 'Market Cap']],
             use_container_width=True,
             hide_index=True
         )
