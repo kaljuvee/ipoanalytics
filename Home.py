@@ -401,46 +401,45 @@ else:
         col1, col2 = st.columns(2)
         
         with col1:
-            st.subheader("🚀 Top Performers")
-            top_performers = filtered_df.nlargest(5, 'price_change_since_ipo')[
-                ['ticker', 'company_name', 'sector', 'price_change_since_ipo', 'market_cap']
-            ].copy()
-            top_performers['Performance'] = top_performers['price_change_since_ipo'].apply(format_percentage)
-            top_performers['Market Cap'] = top_performers['market_cap'].apply(format_market_cap)
-            st.dataframe(
-                top_performers[['ticker', 'company_name', 'sector', 'Performance', 'Market Cap']],
-                use_container_width=True,
-                hide_index=True
-            )
+            with st.expander("🚀 Top Performers", expanded=False):
+                top_performers = filtered_df.nlargest(5, 'price_change_since_ipo')[
+                    ['ticker', 'company_name', 'sector', 'price_change_since_ipo', 'market_cap']
+                ].copy()
+                top_performers['Performance'] = top_performers['price_change_since_ipo'].apply(format_percentage)
+                top_performers['Market Cap'] = top_performers['market_cap'].apply(format_market_cap)
+                st.dataframe(
+                    top_performers[['ticker', 'company_name', 'sector', 'Performance', 'Market Cap']],
+                    use_container_width=True,
+                    hide_index=True
+                )
         
         with col2:
-            st.subheader("📉 Worst Performers")
-            worst_performers = filtered_df.nsmallest(5, 'price_change_since_ipo')[
-                ['ticker', 'company_name', 'sector', 'price_change_since_ipo', 'market_cap']
-            ].copy()
-            worst_performers['Performance'] = worst_performers['price_change_since_ipo'].apply(format_percentage)
-            worst_performers['Market Cap'] = worst_performers['market_cap'].apply(format_market_cap)
-            st.dataframe(
-                worst_performers[['ticker', 'company_name', 'sector', 'Performance', 'Market Cap']],
-                use_container_width=True,
-                hide_index=True
-            )
+            with st.expander("📉 Worst Performers", expanded=False):
+                worst_performers = filtered_df.nsmallest(5, 'price_change_since_ipo')[
+                    ['ticker', 'company_name', 'sector', 'price_change_since_ipo', 'market_cap']
+                ].copy()
+                worst_performers['Performance'] = worst_performers['price_change_since_ipo'].apply(format_percentage)
+                worst_performers['Market Cap'] = worst_performers['market_cap'].apply(format_market_cap)
+                st.dataframe(
+                    worst_performers[['ticker', 'company_name', 'sector', 'Performance', 'Market Cap']],
+                    use_container_width=True,
+                    hide_index=True
+                )
         
         # Detailed data table
         st.markdown("---")
-        st.subheader("📋 Detailed IPO Data")
-        
-        # Prepare display dataframe
-        display_df = filtered_df.copy()
-        display_df['Performance'] = display_df['price_change_since_ipo'].apply(format_percentage)
-        display_df['Market Cap'] = display_df['market_cap'].apply(format_market_cap)
-        display_df['IPO Date'] = pd.to_datetime(display_df['ipo_date']).dt.strftime('%Y-%m-%d')
-        
-        st.dataframe(
-            display_df[['ticker', 'company_name', 'country', 'exchange', 'sector', 'IPO Date', 'Performance', 'Market Cap']],
-            use_container_width=True,
-            hide_index=True
-        )
+        with st.expander("📋 Detailed IPO Data", expanded=False):
+            # Prepare display dataframe
+            display_df = filtered_df.copy()
+            display_df['Performance'] = display_df['price_change_since_ipo'].apply(format_percentage)
+            display_df['Market Cap'] = display_df['market_cap'].apply(format_market_cap)
+            display_df['IPO Date'] = pd.to_datetime(display_df['ipo_date']).dt.strftime('%Y-%m-%d')
+            
+            st.dataframe(
+                display_df[['ticker', 'company_name', 'country', 'exchange', 'sector', 'IPO Date', 'Performance', 'Market Cap']],
+                use_container_width=True,
+                hide_index=True
+            )
         
     else:
         st.warning("No IPO data matches the current filters. Please adjust your filter criteria.")
