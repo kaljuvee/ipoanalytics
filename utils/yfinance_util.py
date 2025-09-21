@@ -93,16 +93,34 @@ class IPODataFetcher:
         # List of known IPO tickers from 2024 (this would need to be expanded with real data source)
         # In a production environment, you'd use a dedicated IPO data provider
         recent_ipos = [
-            # Technology IPOs 2024
+            # US Technology IPOs 2024
             "RDDT", "SMCI", "ARM", "SOLV", "KKVR", "KROS", "TMDX", "CGON",
-            # Healthcare/Biotech IPOs 2024  
+            # US Healthcare/Biotech IPOs 2024  
             "KRYS", "VERA", "IMVT", "PRCT", "CGEM", "LYEL", "NRIX", "BCYC",
-            # Financial IPOs 2024
+            # US Financial IPOs 2024
             "TPG", "FCNCA", "RYAN", "SOLV", "KKR", "TPVG",
-            # Consumer/Retail IPOs 2024
+            # US Consumer/Retail IPOs 2024
             "SHAK", "FIGS", "RVLV", "BMBL", "DASH", "ABNB",
-            # Industrial IPOs 2024
-            "RIVN", "LCID", "BIRD", "GRAB", "DIDI", "CPNG"
+            # US Industrial IPOs 2024
+            "RIVN", "LCID", "BIRD", "GRAB", "DIDI", "CPNG",
+            
+            # European IPOs 2024 (using European ticker formats)
+            # UK - London Stock Exchange
+            "FRAS.L", "WEIR.L", "OCDO.L", "MNDI.L", "AUTO.L",
+            # Germany - XETRA
+            "SAP.DE", "SIE.DE", "ALV.DE", "DTE.DE", "BAS.DE",
+            # France - Euronext Paris
+            "MC.PA", "OR.PA", "SAN.PA", "BNP.PA", "AI.PA",
+            # Netherlands - Euronext Amsterdam
+            "ASML.AS", "RDSA.AS", "INGA.AS", "HEIA.AS", "UNA.AS",
+            # Italy - Borsa Italiana
+            "UCG.MI", "ISP.MI", "ENI.MI", "ENEL.MI", "TIT.MI",
+            # Spain - BME
+            "SAN.MC", "TEF.MC", "IBE.MC", "BBVA.MC", "ITX.MC",
+            # Switzerland - SIX
+            "NESN.SW", "ROG.SW", "NOVN.SW", "UHR.SW", "ABBN.SW",
+            # Nordic Countries
+            "VOLV-B.ST", "ERIC-B.ST", "NOKIA.HE", "DSV.CO", "EQNR.OL"
         ]
         
         ipo_data = []
@@ -135,12 +153,36 @@ class IPODataFetcher:
                     if shares_outstanding > 0:
                         market_cap = shares_outstanding * current_price
                 
-                # Determine exchange
+                # Determine exchange based on ticker suffix and exchange info
                 exchange = info.get('exchange', 'UNKNOWN')
+                
+                # Map Yahoo Finance exchange codes to our standard names
                 if exchange in ['NMS', 'NGM', 'NCM']:
                     exchange = 'NASDAQ'
                 elif exchange in ['NYQ', 'NYSE']:
                     exchange = 'NYSE'
+                elif ticker.endswith('.L'):
+                    exchange = 'LSE'
+                elif ticker.endswith('.DE'):
+                    exchange = 'XETRA'
+                elif ticker.endswith('.PA'):
+                    exchange = 'EPA'
+                elif ticker.endswith('.AS'):
+                    exchange = 'AMS'
+                elif ticker.endswith('.MI'):
+                    exchange = 'BIT'
+                elif ticker.endswith('.MC'):
+                    exchange = 'BME'
+                elif ticker.endswith('.SW'):
+                    exchange = 'SIX'
+                elif ticker.endswith('.ST'):
+                    exchange = 'STO'
+                elif ticker.endswith('.HE'):
+                    exchange = 'HEL'
+                elif ticker.endswith('.CO'):
+                    exchange = 'CPH'
+                elif ticker.endswith('.OL'):
+                    exchange = 'OSL'
                 
                 ipo_data.append({
                     'ticker': ticker,
