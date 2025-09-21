@@ -307,6 +307,54 @@ else:
         
         st.plotly_chart(fig, use_container_width=True)
         
+        # About IPO Analytics section
+        st.markdown("---")
+        st.subheader("ℹ️ About IPO Analytics")
+        
+        # Create columns for exchange information
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.markdown("""
+            **🇺🇸 US Markets:**
+            - NASDAQ, NYSE, AMEX
+            
+            **🇬🇧 United Kingdom:**
+            - LSE, AIM, LON
+            
+            **🇩🇪 Germany:**
+            - XETRA, FSE, FRA, BER
+            """)
+        
+        with col2:
+            st.markdown("""
+            **🇫🇷 France:**
+            - EPA, EURONEXT, PAR
+            
+            **🇳🇱 Netherlands:**
+            - AMS
+            
+            **🇮🇹 Italy:**
+            - BIT, MIL
+            
+            **🇪🇸 Spain:**
+            - BME, MCE, MAD
+            """)
+        
+        with col3:
+            st.markdown("""
+            **🇨🇭 Switzerland:**
+            - SIX, VTX
+            
+            **🌍 Nordic Countries:**
+            - STO, HEL, CPH, OSL
+            
+            **🇪🇺 Other European:**
+            - WSE, BUD, PRA, ATH, LIS, BRU, VIE, TAL, RIG, VSE
+            """)
+        
+        st.markdown("---")
+        
         # Performance distribution
         col1, col2 = st.columns(2)
         
