@@ -205,3 +205,30 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# IPO Analytics specific
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Streamlit
+.streamlit/
+
+# API Keys and secrets
+api_keys.txt
+secrets.toml
+
+# Screenshots and testing artifacts
+screenshots/
+*.webp
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Backup files
+*.bak
+*.backup

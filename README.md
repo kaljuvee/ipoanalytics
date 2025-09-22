@@ -1,33 +1,61 @@
-# IPO Analytics - Market Heatmap Dashboard
+# IPO Analytics - Global Market Heatmap
 
-A comprehensive Streamlit application that visualizes Initial Public Offering (IPO) performance data using an interactive market heatmap similar to Finviz. The application tracks IPOs from multiple exchanges with country-based filtering, showing performance since listing with sector-based organization and market cap-weighted visualization.
+A comprehensive Streamlit application that visualizes Initial Public Offering (IPO) performance data using an interactive market heatmap similar to Finviz. The application provides **global market coverage** across 70 exchanges in 50+ countries with regional filtering (APAC/EMEA/Americas), AI-powered market commentary, and real-time news integration.
 
 ## 🚀 Features
 
-- **Interactive Market Heatmap**: Treemap visualization showing IPO performance with color-coded returns
-- **Country-Based Filtering**: Filter IPOs by country with support for US and European markets
-- **Real-time Data**: Fetches live data from Yahoo Finance API
-- **SQLite Database**: Local data storage for efficient querying and caching
-- **Sector Analysis**: Performance breakdown by industry sectors
-- **Exchange Filtering**: Filter by multiple exchanges (NASDAQ, NYSE, European exchanges)
-- **Performance Metrics**: Detailed statistics including top/worst performers
-- **Hover Information**: Comprehensive details including IPO date, country, exchange, and performance
+### Core Functionality
+- **Interactive Market Heatmap**: Treemap visualization with hierarchical structure (Global → Region → Country → Sector → Ticker)
+- **Global Regional Filtering**: Filter by APAC, EMEA, Americas regions with cascading country/exchange filters
+- **Real-time Global Data**: Fetches live data from 70 exchanges across 50+ countries via Yahoo Finance API
+- **AI-Powered Commentary**: Market insights and trend analysis using OpenAI GPT integration
+- **Real-time News Integration**: Latest IPO news from Tavily and Exa.ai APIs
+- **Comprehensive Performance Metrics**: Regional comparisons, sector analysis, and detailed statistics
+- **Upcoming IPOs Pipeline**: Comprehensive view of expected public offerings
 
-## 🌍 Supported Markets
+### Enhanced Technical Features
+- **Parallel Data Processing**: Multi-threaded data fetching for improved performance across global markets
+- **Comprehensive Error Handling**: Robust fallback mechanisms and status indicators
+- **Professional UI**: Clean, responsive design with proper loading states and status indicators
+- **SQLite Database**: Optimized local storage with regional indexing and bulk operations
 
-### United States
-- NASDAQ, NYSE, AMEX
+## 🌍 Global Market Coverage (70 Exchanges)
 
-### European Markets
+### 🌎 Americas Region (15 Exchanges)
+- **United States**: NASDAQ, NYSE, AMEX, NYSEARCA
+- **Canada**: TSX, TSXV, CSE
+- **Brazil**: B3, BOVESPA
+- **Mexico**: BMV
+- **Argentina**: BCBA
+- **Chile**: BCS
+- **Colombia**: BVC
+- **Peru**: BVL
+
+### 🌍 EMEA Region (35 Exchanges)
 - **United Kingdom**: LSE, AIM, LON
-- **Germany**: XETRA, FSE, FRA, BER
+- **Germany**: XETRA, FSE, FRA, BER, MUN, STU, HAM, DUS
 - **France**: EPA, EURONEXT, PAR
 - **Netherlands**: AMS
 - **Italy**: BIT, MIL
 - **Spain**: BME, MCE, MAD
 - **Switzerland**: SIX, VTX
 - **Nordic Countries**: STO (Sweden), HEL (Finland), CPH (Denmark), OSL (Norway)
-- **Other European**: WSE (Poland), BUD (Hungary), PRA (Czech Republic), ATH (Greece), LIS (Portugal), BRU (Belgium), VIE (Austria), TAL (Estonia), RIG (Latvia), VSE (Lithuania)
+- **Eastern Europe**: WSE (Poland), BUD (Hungary), PRA (Czech Republic), ATH (Greece), LIS (Portugal), BRU (Belgium), VIE (Austria), TAL (Estonia), RIG (Latvia), VSE (Lithuania)
+- **Middle East**: IST (Turkey), TASE (Israel), DFM (Dubai), ADX (Abu Dhabi), TADAWUL (Saudi Arabia), QE (Qatar), KSE (Kuwait)
+- **Africa**: JSE (South Africa), EGX (Egypt), CSE (Cyprus), NSE_NG (Nigeria), NSE_KE (Kenya)
+
+### 🌏 APAC Region (20 Exchanges)
+- **China**: SSE (Shanghai), SZSE (Shenzhen)
+- **Hong Kong**: HKEX, HKG
+- **Japan**: TSE (Tokyo), JPX, OSA (Osaka)
+- **South Korea**: KRX, KOSPI, KOSDAQ
+- **India**: BSE (Bombay), NSE (National)
+- **Singapore**: SGX
+- **Taiwan**: TWSE, TPEx
+- **Australia**: ASX
+- **New Zealand**: NZX
+- **Southeast Asia**: SET (Thailand), KLSE (Malaysia), IDX (Indonesia), PSE (Philippines), HOSE (Vietnam), HNX (Vietnam)
+- **Other APAC**: DSE (Bangladesh), KSE (Pakistan), CSE (Sri Lanka), MSE (Mongolia), KASE (Kazakhstan), UzSE (Uzbekistan)
 
 ## 📊 Visualization Details
 
@@ -74,15 +102,25 @@ The heatmap displays:
 
 ```
 IPOAnalytics/
-├── Home.py                 # Main Streamlit application
+├── Home.py                          # Main Streamlit application with enhanced UI
+├── requirements.txt                 # Python dependencies including AI/news APIs
+├── README.md                       # Comprehensive documentation
 ├── utils/
-│   ├── yfinance_util.py   # Yahoo Finance data fetching utilities
-│   └── database.py        # SQLite database management
+│   ├── database.py                 # SQLite database management with regional indexing
+│   ├── yfinance_util.py           # Original Yahoo Finance utility
+│   ├── global_yfinance_util.py    # Enhanced global data fetcher (70 exchanges)
+│   ├── enhanced_global_loader.py  # Global data integration and processing
+│   ├── regional_mapping.py        # Regional categorization (APAC/EMEA/Americas)
+│   ├── ai_commentary.py           # OpenAI integration for market analysis
+│   ├── enhanced_news.py           # Tavily/Exa.ai news integration
+│   └── performance_utils.py       # Performance calculations and metrics
 ├── data/
-│   └── ipo_analytics.db   # SQLite database (created automatically)
-├── requirements.txt       # Python dependencies
-├── test_app.py           # Test suite for functionality verification
-└── README.md             # This file
+│   └── ipo_analytics.db           # SQLite database (created automatically)
+├── docs/                          # Documentation and implementation summaries
+│   ├── global_implementation_summary.md
+│   ├── browser_testing_summary.md
+│   └── enhanced_features_summary.md
+└── playground/                    # Development and testing files
 ```
 
 ## 🔧 Usage
