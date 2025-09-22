@@ -172,6 +172,7 @@ EXCHANGE_TO_COUNTRY = {
     "AIM": "United Kingdom",
     "LON": "United Kingdom",
     "AQSE": "United Kingdom",
+    "L": "United Kingdom",  # London Stock Exchange suffix
     
     # EMEA - German Exchanges
     "XETRA": "Germany",
@@ -183,26 +184,36 @@ EXCHANGE_TO_COUNTRY = {
     "HAM": "Germany",
     "DUS": "Germany",
     "TRADEGATE": "Germany",
+    "DE": "Germany",  # German exchange suffix
     
     # EMEA - French Exchanges
     "EPA": "France",
     "EURONEXT": "France",
     "PAR": "France",
     "ALTERNEXT": "France",
+    "PA": "France",  # Paris exchange suffix
     
     # EMEA - Other European Exchanges
     "AMS": "Netherlands",
+    "AS": "Netherlands",  # Amsterdam exchange suffix
     "BIT": "Italy",
     "MIL": "Italy",
+    "MI": "Italy",  # Milan exchange suffix
     "BME": "Spain",
     "MCE": "Spain",
     "MAD": "Spain",
+    "MC": "Spain",  # Madrid exchange suffix
     "SIX": "Switzerland",
+    "SW": "Switzerland",  # Swiss exchange suffix
     "VTX": "Switzerland",
     "STO": "Sweden",
+    "ST": "Sweden",  # Stockholm exchange suffix
     "HEL": "Finland",
+    "HE": "Finland",  # Helsinki exchange suffix
     "CPH": "Denmark",
+    "CO": "Denmark",  # Copenhagen exchange suffix
     "OSL": "Norway",
+    "OL": "Norway",  # Oslo exchange suffix
     "WSE": "Poland",
     "BUD": "Hungary",
     "PRA": "Czech Republic",

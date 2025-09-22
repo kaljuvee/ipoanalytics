@@ -160,7 +160,6 @@ with st.sidebar:
         st.write(f"**Records:** {last_refresh['records_processed']}")
 
 # Load data from database
-@st.cache_data
 def load_ipo_data(years):
     all_data = []
     for year in years:
@@ -169,7 +168,10 @@ def load_ipo_data(years):
             all_data.append(year_data)
     
     if all_data:
-        return pd.concat(all_data, ignore_index=True).drop_duplicates(subset=['ticker'])
+        combined_df = pd.concat(all_data, ignore_index=True).drop_duplicates(subset=['ticker'])
+        # Apply regional mapping to all data
+        combined_df = add_regional_data(combined_df)
+        return combined_df
     else:
         return pd.DataFrame()
 
@@ -179,9 +181,6 @@ df = load_ipo_data(years_to_include)
 if not df.empty:
     st.session_state.data_loaded = True
     st.session_state.ipo_data = df
-    
-    # Add regional data to dataframe
-    df = add_regional_data(df)
     
     # Filters section in main pane
     st.markdown('<div class="filter-section">', unsafe_allow_html=True)
