@@ -300,7 +300,7 @@ else:
             },
             color_continuous_scale="RdYlGn",
             color_continuous_midpoint=0,
-            title=f"IPO Performance Heatmap - {selected_timeframe}"
+            title=""
         )
         
         # Update layout
