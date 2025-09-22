@@ -67,11 +67,17 @@ st.sidebar.markdown('<div class="sidebar-header">IPO Analytics Control Panel</di
 st.sidebar.subheader("📊 Data Management")
 
 current_year = datetime.now().year
-selected_year = st.sidebar.selectbox(
-    "Select Year",
-    options=[current_year, current_year - 1, current_year - 2],
+selected_timeframe = st.sidebar.selectbox(
+    "Select Timeframe",
+    options=["Last 3 years", "Last 5 years"],
     index=0
 )
+
+# Calculate years based on timeframe
+if selected_timeframe == "Last 3 years":
+    years_to_include = [current_year, current_year - 1, current_year - 2]
+else:  # Last 5 years
+    years_to_include = [current_year, current_year - 1, current_year - 2, current_year - 3, current_year - 4]
 
 # Data refresh button
 if st.sidebar.button("🔄 Refresh IPO Data", type="primary"):
@@ -80,8 +86,14 @@ if st.sidebar.button("🔄 Refresh IPO Data", type="primary"):
             # Log refresh start
             refresh_start = datetime.now().isoformat()
             
-            # Fetch IPO data
-            ipo_records = fetcher.get_nasdaq_nyse_ipos(year=selected_year)
+            # Fetch IPO data for all years in timeframe
+            all_ipo_records = []
+            for year in years_to_include:
+                year_records = fetcher.get_nasdaq_nyse_ipos(year=year)
+                if year_records:
+                    all_ipo_records.extend(year_records)
+            
+            ipo_records = all_ipo_records
             
             if ipo_records:
                 # Insert into database
@@ -126,10 +138,19 @@ st.sidebar.subheader("🔍 Filters")
 
 # Load data from database
 @st.cache_data
-def load_ipo_data(year):
-    return db.get_ipo_data(year=year)
+def load_ipo_data(years):
+    all_data = []
+    for year in years:
+        year_data = db.get_ipo_data(year=year)
+        if not year_data.empty:
+            all_data.append(year_data)
+    
+    if all_data:
+        return pd.concat(all_data, ignore_index=True).drop_duplicates(subset=['ticker'])
+    else:
+        return pd.DataFrame()
 
-df = load_ipo_data(selected_year)
+df = load_ipo_data(years_to_include)
 
 if not df.empty:
     st.session_state.data_loaded = True
@@ -244,7 +265,7 @@ else:
     st.markdown("---")
     
     # Create treemap visualization
-    st.subheader(f"🗺️ IPO Market Heatmap - {selected_year}")
+    st.subheader(f"🗺️ IPO Market Heatmap - {selected_timeframe}")
     
     if len(filtered_df) > 0:
         # Prepare data for treemap
@@ -281,7 +302,7 @@ else:
             },
             color_continuous_scale="RdYlGn",
             color_continuous_midpoint=0,
-            title=f"IPO Performance Heatmap - {selected_year}"
+            title=f"IPO Performance Heatmap - {selected_timeframe}"
         )
         
         # Update layout
@@ -400,28 +421,38 @@ else:
         st.markdown("---")
         col1, col2 = st.columns(2)
         
+        # Import performance utilities
+        from performance_utils import add_performance_metrics, format_annualized_return, format_ipo_date
+        
+        # Add performance metrics to filtered data
+        enhanced_df = add_performance_metrics(filtered_df)
+        
         with col1:
             with st.expander("🚀 Top Performers", expanded=False):
-                top_performers = filtered_df.nlargest(5, 'price_change_since_ipo')[
-                    ['ticker', 'company_name', 'sector', 'price_change_since_ipo', 'market_cap']
+                top_performers = enhanced_df.nlargest(5, 'price_change_since_ipo')[
+                    ['ticker', 'company_name', 'sector', 'ipo_date', 'price_change_since_ipo', 'annualized_return', 'market_cap']
                 ].copy()
+                top_performers['Listing Date'] = top_performers['ipo_date'].apply(format_ipo_date)
                 top_performers['Performance'] = top_performers['price_change_since_ipo'].apply(format_percentage)
+                top_performers['Annualized Return'] = top_performers['annualized_return'].apply(format_annualized_return)
                 top_performers['Market Cap'] = top_performers['market_cap'].apply(format_market_cap)
                 st.dataframe(
-                    top_performers[['ticker', 'company_name', 'sector', 'Performance', 'Market Cap']],
+                    top_performers[['ticker', 'company_name', 'sector', 'Listing Date', 'Performance', 'Annualized Return', 'Market Cap']],
                     use_container_width=True,
                     hide_index=True
                 )
         
         with col2:
             with st.expander("📉 Worst Performers", expanded=False):
-                worst_performers = filtered_df.nsmallest(5, 'price_change_since_ipo')[
-                    ['ticker', 'company_name', 'sector', 'price_change_since_ipo', 'market_cap']
+                worst_performers = enhanced_df.nsmallest(5, 'price_change_since_ipo')[
+                    ['ticker', 'company_name', 'sector', 'ipo_date', 'price_change_since_ipo', 'annualized_return', 'market_cap']
                 ].copy()
+                worst_performers['Listing Date'] = worst_performers['ipo_date'].apply(format_ipo_date)
                 worst_performers['Performance'] = worst_performers['price_change_since_ipo'].apply(format_percentage)
+                worst_performers['Annualized Return'] = worst_performers['annualized_return'].apply(format_annualized_return)
                 worst_performers['Market Cap'] = worst_performers['market_cap'].apply(format_market_cap)
                 st.dataframe(
-                    worst_performers[['ticker', 'company_name', 'sector', 'Performance', 'Market Cap']],
+                    worst_performers[['ticker', 'company_name', 'sector', 'Listing Date', 'Performance', 'Annualized Return', 'Market Cap']],
                     use_container_width=True,
                     hide_index=True
                 )
@@ -429,14 +460,15 @@ else:
         # Detailed data table
         st.markdown("---")
         with st.expander("📋 Detailed IPO Data", expanded=False):
-            # Prepare display dataframe
-            display_df = filtered_df.copy()
+            # Prepare display dataframe with performance metrics
+            display_df = add_performance_metrics(filtered_df.copy())
             display_df['Performance'] = display_df['price_change_since_ipo'].apply(format_percentage)
+            display_df['Annualized Return'] = display_df['annualized_return'].apply(format_annualized_return)
             display_df['Market Cap'] = display_df['market_cap'].apply(format_market_cap)
             display_df['IPO Date'] = pd.to_datetime(display_df['ipo_date']).dt.strftime('%Y-%m-%d')
             
             st.dataframe(
-                display_df[['ticker', 'company_name', 'country', 'exchange', 'sector', 'IPO Date', 'Performance', 'Market Cap']],
+                display_df[['ticker', 'company_name', 'country', 'exchange', 'sector', 'IPO Date', 'Performance', 'Annualized Return', 'Market Cap']],
                 use_container_width=True,
                 hide_index=True
             )
