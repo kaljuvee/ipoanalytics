@@ -4,6 +4,8 @@ plotly
 pandas
 requests
 langchain
+langchain-openai
+langchain-community
 openai
 tavily-python
 sqlalchemy
