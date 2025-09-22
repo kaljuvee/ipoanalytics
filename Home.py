@@ -327,51 +327,92 @@ else:
         
         st.plotly_chart(fig, use_container_width=True)
         
-        # About IPO Analytics section
+        # About IPO Map section with dynamic country counts
         st.markdown("---")
         st.subheader("ℹ️ About IPO Map")
+        
+        # Calculate country counts from current data
+        country_counts = filtered_df['country'].value_counts().to_dict() if not filtered_df.empty else {}
+        
+        # Define country groupings with their exchanges
+        country_info = {
+            "🇺🇸 US Markets": {
+                "countries": ["United States"],
+                "exchanges": "NASDAQ, NYSE, AMEX"
+            },
+            "🇬🇧 United Kingdom": {
+                "countries": ["United Kingdom"],
+                "exchanges": "LSE, AIM, LON"
+            },
+            "🇩🇪 Germany": {
+                "countries": ["Germany"],
+                "exchanges": "XETRA, FSE, FRA, BER"
+            },
+            "🇫🇷 France": {
+                "countries": ["France"],
+                "exchanges": "EPA, EURONEXT, PAR"
+            },
+            "🇳🇱 Netherlands": {
+                "countries": ["Netherlands"],
+                "exchanges": "AMS"
+            },
+            "🇮🇹 Italy": {
+                "countries": ["Italy"],
+                "exchanges": "BIT, MIL"
+            },
+            "🇪🇸 Spain": {
+                "countries": ["Spain"],
+                "exchanges": "BME, MCE, MAD"
+            },
+            "🇨🇭 Switzerland": {
+                "countries": ["Switzerland"],
+                "exchanges": "SIX, VTX"
+            },
+            "🌍 Nordic Countries": {
+                "countries": ["Sweden", "Norway", "Denmark", "Finland"],
+                "exchanges": "STO, HEL, CPH, OSL"
+            },
+            "🇪🇺 Other European": {
+                "countries": ["Poland", "Hungary", "Czech Republic", "Greece", "Portugal", "Belgium", "Austria", "Estonia", "Latvia", "Lithuania"],
+                "exchanges": "WSE, BUD, PRA, ATH, LIS, BRU, VIE, TAL, RIG, VSE"
+            }
+        }
         
         # Create columns for exchange information
         col1, col2, col3 = st.columns(3)
         
+        # Split country groups into three columns
+        groups = list(country_info.keys())
+        col1_groups = groups[0:4]
+        col2_groups = groups[4:7]
+        col3_groups = groups[7:]
+        
         with col1:
-            st.markdown("""
-            **🇺🇸 US Markets:**
-            - NASDAQ, NYSE, AMEX
-            
-            **🇬🇧 United Kingdom:**
-            - LSE, AIM, LON
-            
-            **🇩🇪 Germany:**
-            - XETRA, FSE, FRA, BER
-            """)
+            for group in col1_groups:
+                info = country_info[group]
+                total_count = sum(country_counts.get(country, 0) for country in info["countries"])
+                st.markdown(f"""
+                **{group} ({total_count}):**
+                - {info["exchanges"]}
+                """)
         
         with col2:
-            st.markdown("""
-            **🇫🇷 France:**
-            - EPA, EURONEXT, PAR
-            
-            **🇳🇱 Netherlands:**
-            - AMS
-            
-            **🇮🇹 Italy:**
-            - BIT, MIL
-            
-            **🇪🇸 Spain:**
-            - BME, MCE, MAD
-            """)
+            for group in col2_groups:
+                info = country_info[group]
+                total_count = sum(country_counts.get(country, 0) for country in info["countries"])
+                st.markdown(f"""
+                **{group} ({total_count}):**
+                - {info["exchanges"]}
+                """)
         
         with col3:
-            st.markdown("""
-            **🇨🇭 Switzerland:**
-            - SIX, VTX
-            
-            **🌍 Nordic Countries:**
-            - STO, HEL, CPH, OSL
-            
-            **🇪🇺 Other European:**
-            - WSE, BUD, PRA, ATH, LIS, BRU, VIE, TAL, RIG, VSE
-            """)
+            for group in col3_groups:
+                info = country_info[group]
+                total_count = sum(country_counts.get(country, 0) for country in info["countries"])
+                st.markdown(f"""
+                **{group} ({total_count}):**
+                - {info["exchanges"]}
+                """)
         
         st.markdown("---")
         
