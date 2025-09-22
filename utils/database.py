@@ -30,6 +30,8 @@ class IPODatabase:
                     sector TEXT,
                     industry TEXT,
                     exchange TEXT,
+                    country TEXT,
+                    region TEXT,
                     ipo_date TEXT,
                     ipo_price REAL,
                     current_price REAL,
@@ -94,16 +96,18 @@ class IPODatabase:
                 try:
                     cursor.execute('''
                         INSERT OR REPLACE INTO ipo_data 
-                        (ticker, company_name, sector, industry, exchange, ipo_date, 
+                        (ticker, company_name, sector, industry, exchange, country, region, ipo_date, 
                          ipo_price, current_price, market_cap, price_change_since_ipo, 
                          volume, last_updated)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (
                         record['ticker'],
                         record['company_name'],
                         record['sector'],
                         record['industry'],
                         record['exchange'],
+                        record.get('country', 'Unknown'),
+                        record.get('region', 'Other'),
                         record['ipo_date'],
                         record['ipo_price'],
                         record['current_price'],

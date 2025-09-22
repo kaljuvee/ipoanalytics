@@ -356,21 +356,46 @@ def get_exchanges_by_region(region: str) -> list:
     
     return exchanges
 
-def add_regional_data(df):
-    """Add region and country columns to a DataFrame with exchange data"""
-    if df.empty:
+def add_regional_data(data):
+    """Add region and country columns to a DataFrame or list of dictionaries with exchange data"""
+    import pandas as pd
+    
+    # Handle list of dictionaries
+    if isinstance(data, list):
+        if not data:
+            return data
+        
+        # Process each record in the list
+        for record in data:
+            if isinstance(record, dict):
+                # Add country if not present
+                if 'country' not in record or not record['country'] or record['country'] == 'Unknown':
+                    record['country'] = get_country_from_exchange(record.get('exchange', ''))
+                
+                # Add region
+                record['region'] = get_region_from_country(record.get('country', ''))
+        
+        return data
+    
+    # Handle DataFrame
+    elif hasattr(data, 'empty'):
+        if data.empty:
+            return data
+        
+        df = data.copy()
+        
+        # Add country if not present
+        if 'country' not in df.columns:
+            df['country'] = df['exchange'].apply(get_country_from_exchange)
+        
+        # Add region
+        df['region'] = df['country'].apply(get_region_from_country)
+        
         return df
     
-    df = df.copy()
-    
-    # Add country if not present
-    if 'country' not in df.columns:
-        df['country'] = df['exchange'].apply(get_country_from_exchange)
-    
-    # Add region
-    df['region'] = df['country'].apply(get_region_from_country)
-    
-    return df
+    else:
+        # Return as-is if unknown format
+        return data
 
 def get_regional_summary():
     """Get a summary of all regions and their countries/exchanges"""

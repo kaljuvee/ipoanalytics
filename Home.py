@@ -355,6 +355,70 @@ if not df.empty:
             
             st.plotly_chart(fig, use_container_width=True)
         
+        # Country Summary Section
+        st.subheader("🌍 Global Market Overview")
+        
+        # Create country summary with flags and statistics
+        country_summary = filtered_df.groupby(['country', 'region']).agg({
+            'ticker': 'count',
+            'exchange': lambda x: ', '.join(sorted(x.unique())),
+            'price_change_since_ipo': 'mean',
+            'market_cap': 'sum'
+        }).reset_index()
+        
+        country_summary.columns = ['Country', 'Region', 'IPO Count', 'Exchanges', 'Avg Performance', 'Total Market Cap']
+        country_summary = country_summary.sort_values('IPO Count', ascending=False)
+        
+        # Country flag mapping
+        country_flags = {
+            'United States': '🇺🇸', 'Canada': '🇨🇦', 'Brazil': '🇧🇷', 'Argentina': '🇦🇷', 'Mexico': '🇲🇽',
+            'United Kingdom': '🇬🇧', 'Germany': '🇩🇪', 'France': '🇫🇷', 'Netherlands': '🇳🇱', 'Italy': '🇮🇹',
+            'Spain': '🇪🇸', 'Switzerland': '🇨🇭', 'Sweden': '🇸🇪', 'Norway': '🇳🇴', 'Denmark': '🇩🇰',
+            'Finland': '🇫🇮', 'Poland': '🇵🇱', 'Czech Republic': '🇨🇿', 'Austria': '🇦🇹', 'Belgium': '🇧🇪',
+            'Portugal': '🇵🇹', 'Greece': '🇬🇷', 'Ireland': '🇮🇪', 'Luxembourg': '🇱🇺', 'Estonia': '🇪🇪',
+            'Latvia': '🇱🇻', 'Lithuania': '🇱🇹', 'Hungary': '🇭🇺', 'Slovakia': '🇸🇰', 'Slovenia': '🇸🇮',
+            'Croatia': '🇭🇷', 'Romania': '🇷🇴', 'Bulgaria': '🇧🇬', 'Serbia': '🇷🇸', 'Turkey': '🇹🇷',
+            'Russia': '🇷🇺', 'Ukraine': '🇺🇦', 'Israel': '🇮🇱', 'Saudi Arabia': '🇸🇦', 'UAE': '🇦🇪',
+            'Qatar': '🇶🇦', 'Kuwait': '🇰🇼', 'Egypt': '🇪🇬', 'South Africa': '🇿🇦', 'Nigeria': '🇳🇬',
+            'China': '🇨🇳', 'Hong Kong': '🇭🇰', 'Japan': '🇯🇵', 'South Korea': '🇰🇷', 'India': '🇮🇳',
+            'Singapore': '🇸🇬', 'Australia': '🇦🇺', 'New Zealand': '🇳🇿', 'Thailand': '🇹🇭', 'Malaysia': '🇲🇾',
+            'Indonesia': '🇮🇩', 'Philippines': '🇵🇭', 'Vietnam': '🇻🇳', 'Taiwan': '🇹🇼', 'Bangladesh': '🇧🇩',
+            'Pakistan': '🇵🇰', 'Sri Lanka': '🇱🇰', 'Myanmar': '🇲🇲', 'Cambodia': '🇰🇭', 'Laos': '🇱🇦'
+        }
+        
+        # Add flags to country names
+        country_summary['Country_Display'] = country_summary['Country'].apply(
+            lambda x: f"{country_flags.get(x, '🏳️')} {x}"
+        )
+        
+        # Format performance and market cap
+        country_summary['Performance'] = country_summary['Avg Performance'].apply(
+            lambda x: f"+{x:.1f}%" if x >= 0 else f"{x:.1f}%"
+        )
+        country_summary['Market Cap'] = country_summary['Total Market Cap'].apply(format_market_cap)
+        
+        # Display country summary in columns
+        cols = st.columns(3)
+        for i, (_, row) in enumerate(country_summary.iterrows()):
+            col_idx = i % 3
+            with cols[col_idx]:
+                st.markdown(f"""
+                <div style="
+                    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+                    padding: 15px;
+                    border-radius: 10px;
+                    margin-bottom: 10px;
+                    border-left: 4px solid #4CAF50;
+                ">
+                    <h4 style="margin: 0; color: #2c3e50;">{row['Country_Display']}</h4>
+                    <p style="margin: 5px 0; color: #34495e;"><strong>Region:</strong> {row['Region']}</p>
+                    <p style="margin: 5px 0; color: #34495e;"><strong>IPOs:</strong> {row['IPO Count']}</p>
+                    <p style="margin: 5px 0; color: #34495e;"><strong>Performance:</strong> {row['Performance']}</p>
+                    <p style="margin: 5px 0; color: #34495e;"><strong>Market Cap:</strong> {row['Market Cap']}</p>
+                    <p style="margin: 5px 0; font-size: 0.9em; color: #7f8c8d;"><strong>Exchanges:</strong> {row['Exchanges']}</p>
+                </div>
+                """, unsafe_allow_html=True)
+        
         # Additional sections
         col1, col2 = st.columns(2)
         
@@ -444,25 +508,37 @@ if not df.empty and not filtered_df.empty:
     try:
         commentary = get_ipo_commentary(filtered_df, selected_timeframe)
         if commentary:
-            st.markdown(commentary)
+            # Clean and format the commentary for proper markdown display
+            cleaned_commentary = commentary.replace('**', '**').replace('*', '*')
+            st.markdown(cleaned_commentary)
         else:
-            # Fallback analysis
+            # Fallback analysis with proper markdown formatting
+            regional_analysis = []
+            for region in filtered_df['region'].unique():
+                avg_perf = filtered_df[filtered_df['region'] == region]['price_change_since_ipo'].mean()
+                regional_analysis.append(f"- **{region}:** {format_percentage(avg_perf)} average returns")
+            
+            sector_analysis = []
+            for sector in filtered_df['sector'].value_counts().head(5).index:
+                avg_perf = filtered_df[filtered_df['sector'] == sector]['price_change_since_ipo'].mean()
+                sector_analysis.append(f"- **{sector}:** {format_percentage(avg_perf)} average performance")
+            
             st.markdown(f"""
-            ### IPO Market Analysis - {selected_timeframe}
-            
-            **Market Overview:** Analyzing {len(filtered_df)} IPOs with an average performance of {format_percentage(filtered_df['price_change_since_ipo'].mean())} since listing.
-            
-            **Regional Performance:**
-            {chr(10).join([f"- **{region}:** {format_percentage(filtered_df[filtered_df['region'] == region]['price_change_since_ipo'].mean())} average returns" 
-                          for region in filtered_df['region'].unique()])}
-            
-            **Sector Analysis:**
-            {chr(10).join([f"- **{sector}:** {format_percentage(filtered_df[filtered_df['sector'] == sector]['price_change_since_ipo'].mean())} average performance" 
-                          for sector in filtered_df['sector'].value_counts().head(5).index])}
-            
-            **Key Insights:** The performance disparity across regions and sectors reflects varying market conditions, investor sentiment, and economic fundamentals. Strong performers likely benefit from favorable market dynamics and investor confidence, while underperformers may face sector-specific challenges or regional economic pressures.
-            
-            *Note: AI-powered detailed analysis is temporarily unavailable. This summary provides basic statistical insights.*
+### IPO Market Analysis - {selected_timeframe}
+
+**Market Overview:**  
+Analyzing {len(filtered_df)} IPOs with an average performance of {format_percentage(filtered_df['price_change_since_ipo'].mean())} since listing.
+
+**Regional Performance:**  
+{chr(10).join(regional_analysis)}
+
+**Sector Analysis:**  
+{chr(10).join(sector_analysis)}
+
+**Key Insights:**  
+The performance disparity across regions and sectors reflects varying market conditions, investor sentiment, and economic fundamentals. Strong performers likely benefit from favorable market dynamics and investor confidence, while underperformers may face sector-specific challenges or regional economic pressures.
+
+*Note: AI-powered detailed analysis is temporarily unavailable. This summary provides basic statistical insights.*
             """)
             st.info("ℹ️ Showing statistical analysis (OpenAI API not configured)")
     except Exception as e:
@@ -477,15 +553,32 @@ try:
     if news_data is not None and len(news_data) > 0:
         # Display news in a nice format
         for article in news_data[:5]:  # Show top 5 articles
+            # Handle both dict and string formats
+            if isinstance(article, dict):
+                title = article.get('title', 'No title')
+                url = article.get('url', '#')
+                summary = article.get('summary', 'No summary available')
+                date = article.get('date', 'No date')
+                source = article.get('source', 'Unknown source')
+                relevance_score = article.get('relevance_score', None)
+            else:
+                # Handle string format or other formats
+                title = str(article)
+                url = '#'
+                summary = 'No summary available'
+                date = 'No date'
+                source = 'Unknown source'
+                relevance_score = None
+            
             with st.container():
                 col1, col2 = st.columns([3, 1])
                 with col1:
-                    st.markdown(f"**[{article.get('title', 'No title')}]({article.get('url', '#')})**")
-                    st.markdown(f"*{article.get('summary', 'No summary available')}*")
-                    st.markdown(f"📅 {article.get('date', 'No date')} | 📰 {article.get('source', 'Unknown source')}")
+                    st.markdown(f"**[{title}]({url})**")
+                    st.markdown(f"*{summary}*")
+                    st.markdown(f"📅 {date} | 📰 {source}")
                 with col2:
-                    if 'relevance_score' in article:
-                        st.metric("Relevance", f"{article['relevance_score']:.2f}")
+                    if relevance_score is not None:
+                        st.metric("Relevance", f"{relevance_score:.2f}")
                 st.markdown("---")
     else:
         st.info("ℹ️ Showing sample news data (API keys not configured)")
