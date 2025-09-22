@@ -515,6 +515,47 @@ else:
     else:
         st.warning("No IPO data matches the current filters. Please adjust your filter criteria.")
 
+# Upcoming IPOs Section
+st.markdown("---")
+st.subheader("🔮 Upcoming IPOs")
+
+try:
+    # Import IPO research utility
+    from utils.ipo_research import get_upcoming_ipos
+    
+    # Get upcoming IPO data (without using Exa API key to avoid pushing to repo)
+    upcoming_ipos = get_upcoming_ipos(exa_api_key=None, limit=8)
+    
+    if upcoming_ipos:
+        # Create columns for better layout
+        col1, col2 = st.columns(2)
+        
+        for i, ipo in enumerate(upcoming_ipos):
+            col = col1 if i % 2 == 0 else col2
+            
+            with col:
+                with st.container():
+                    st.markdown(f"""
+                    **{ipo['company_name']}**
+                    - 📅 Expected: {ipo['expected_date']}
+                    - 🏛️ Exchange: {ipo['exchange']}
+                    - 🏢 Sector: {ipo['sector']}
+                    - 📊 Status: {ipo['status']}
+                    """)
+                    
+                    if ipo.get('estimated_valuation') and ipo['estimated_valuation'] != "TBD":
+                        st.markdown(f"- 💰 Est. Valuation: {ipo['estimated_valuation']}")
+                    
+                    if ipo.get('description'):
+                        st.markdown(f"- 📝 {ipo['description']}")
+                    
+                    st.markdown("---")
+    else:
+        st.info("Upcoming IPO information is currently being updated. Please check back later.")
+        
+except Exception as e:
+    st.info("Upcoming IPO data is temporarily unavailable.")
+
 # Footer
 st.markdown("---")
 st.markdown("""
