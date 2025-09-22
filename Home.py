@@ -14,7 +14,7 @@ from database import IPODatabase
 
 # Page configuration
 st.set_page_config(
-    page_title="IPO Analytics - Market Heatmap",
+    page_title="IPO Map - Market Heatmap",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -61,7 +61,6 @@ def init_components():
 db, fetcher = init_components()
 
 # Sidebar
-st.sidebar.markdown('<div class="sidebar-header">IPO Analytics Control Panel</div>', unsafe_allow_html=True)
 
 # Data refresh section
 st.sidebar.subheader("📊 Data Management")
@@ -81,7 +80,7 @@ else:  # Last 5 years
 
 # Data refresh button
 if st.sidebar.button("🔄 Refresh IPO Data", type="primary"):
-    with st.spinner("Fetching IPO data from Yahoo Finance..."):
+    with st.spinner("Fetching IPO data from market sources..."):
         try:
             # Log refresh start
             refresh_start = datetime.now().isoformat()
@@ -204,7 +203,7 @@ if last_refresh:
     st.sidebar.write(f"**Records:** {last_refresh['records_processed']}")
 
 # Main content
-st.markdown('<div class="main-header">IPO Analytics - Market Heatmap</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header">IPO Map</div>', unsafe_allow_html=True)
 
 # Check if data is available
 if not st.session_state.data_loaded or filtered_df.empty:
@@ -265,7 +264,7 @@ else:
     st.markdown("---")
     
     # Create treemap visualization
-    st.subheader(f"🗺️ IPO Market Heatmap - {selected_timeframe}")
+    st.subheader(f"IPO Performance - {selected_timeframe}")
     
     if len(filtered_df) > 0:
         # Prepare data for treemap
@@ -330,7 +329,7 @@ else:
         
         # About IPO Analytics section
         st.markdown("---")
-        st.subheader("ℹ️ About IPO Analytics")
+        st.subheader("ℹ️ About IPO Map")
         
         # Create columns for exchange information
         col1, col2, col3 = st.columns(3)
@@ -480,7 +479,6 @@ else:
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; color: #666; font-size: 0.9rem;">
-    <p>IPO Analytics Dashboard | Data sourced from Yahoo Finance | 
-    <a href="https://finance.yahoo.com" target="_blank">Yahoo Finance</a></p>
+    <p>IPO Map Dashboard | Market data</p>
 </div>
 """, unsafe_allow_html=True)
