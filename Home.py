@@ -11,10 +11,13 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
 
 from yfinance_util import IPODataFetcher, format_market_cap, format_percentage
 from database import IPODatabase
-# from global_markets import get_all_countries, get_region_from_country
-from simple_global_loader import load_global_ipo_data
+from enhanced_global_loader import load_comprehensive_global_ipo_data
 from ai_commentary import get_ipo_commentary
 from ipo_news import get_ipo_news
+from regional_mapping import (
+    add_regional_data, get_region_display_name, 
+    get_countries_by_region, get_exchanges_by_region
+)
 
 # Page configuration
 st.set_page_config(
@@ -88,8 +91,8 @@ if st.sidebar.button("🔄 Refresh IPO Data", type="primary"):
             # Log refresh start
             refresh_start = datetime.now().isoformat()
             
-            # Load comprehensive global IPO data
-            records_loaded = load_global_ipo_data()
+            # Load comprehensive global IPO data from all regions
+            records_loaded = load_comprehensive_global_ipo_data(max_per_region=100)
             
             # Also fetch some real US data for recent years
             all_ipo_records = []
@@ -154,36 +157,61 @@ if not df.empty:
     st.session_state.data_loaded = True
     st.session_state.ipo_data = df
     
-    # Add country information to dataframe
-    from yfinance_util import get_country_from_exchange
-    df['country'] = df['exchange'].apply(get_country_from_exchange)
+    # Add regional data to dataframe
+    df = add_regional_data(df)
     
-    # Country filter
-    available_countries = sorted(df['country'].unique().tolist())
+    # Regional filter (primary filter)
+    available_regions = sorted(df['region'].unique().tolist())
+    if 'Other' in available_regions:
+        available_regions.remove('Other')
+        available_regions.append('Other')  # Move 'Other' to end
+    
+    # Create display names for regions
+    region_options = [get_region_display_name(region) for region in available_regions]
+    region_mapping = dict(zip(region_options, available_regions))
+    
+    selected_region_displays = st.sidebar.multiselect(
+        "🌍 Select Regions",
+        options=region_options,
+        default=region_options  # Select all by default
+    )
+    
+    selected_regions = [region_mapping[display] for display in selected_region_displays]
+    
+    # Filter by selected regions first
+    region_filtered_df = df[df['region'].isin(selected_regions)]
+    
+    # Country filter (within selected regions)
+    available_countries = [c for c in region_filtered_df['country'].unique().tolist() if c is not None and c != 'Unknown']
+    available_countries = sorted(available_countries) if available_countries else []
     selected_countries = st.sidebar.multiselect(
-        "Select Countries",
+        "🏳️ Select Countries",
         options=available_countries,
         default=available_countries
     )
     
-    # Exchange filter
-    available_exchanges = df['exchange'].unique().tolist()
+    # Exchange filter (within selected countries)
+    country_filtered_df = region_filtered_df[region_filtered_df['country'].isin(selected_countries)]
+    available_exchanges = [e for e in country_filtered_df['exchange'].unique().tolist() if e is not None]
+    available_exchanges = sorted(available_exchanges) if available_exchanges else []
     selected_exchanges = st.sidebar.multiselect(
-        "Select Exchanges",
+        "🏢 Select Exchanges",
         options=available_exchanges,
         default=available_exchanges
     )
     
     # Sector filter
-    available_sectors = df['sector'].unique().tolist()
+    available_sectors = [s for s in df['sector'].unique().tolist() if s is not None]
+    available_sectors = sorted(available_sectors) if available_sectors else []
     selected_sectors = st.sidebar.multiselect(
-        "Select Sectors",
+        "🏭 Select Sectors",
         options=available_sectors,
         default=available_sectors
     )
     
-    # Apply filters
+    # Apply all filters
     filtered_df = df[
+        (df['region'].isin(selected_regions)) &
         (df['country'].isin(selected_countries)) &
         (df['exchange'].isin(selected_exchanges)) &
         (df['sector'].isin(selected_sectors))
@@ -285,10 +313,10 @@ else:
             axis=1
         )
         
-        # Create treemap with country hierarchy
+        # Create treemap with regional hierarchy
         fig = px.treemap(
             treemap_df,
-            path=[px.Constant("All IPOs"), "country", "sector", "ticker"],
+            path=[px.Constant("Global IPOs"), "region", "country", "sector", "ticker"],
             values="market_cap",
             color="price_change_since_ipo",
             hover_data={
@@ -522,30 +550,80 @@ try:
     if not filtered_df.empty:
         with st.spinner("Generating AI-powered market insights..."):
             commentary = get_ipo_commentary(filtered_df, selected_timeframe)
-            st.markdown(commentary)
+            
+            # Fix markdown display issues by using st.write with unsafe_allow_html
+            if commentary and len(commentary.strip()) > 0:
+                # Clean up the commentary for better display
+                cleaned_commentary = commentary.strip()
+                
+                # Replace markdown headers with Streamlit-friendly format
+                import re
+                
+                # Convert ## headers to subheaders
+                cleaned_commentary = re.sub(r'^## (.+)$', r'**\1**', cleaned_commentary, flags=re.MULTILINE)
+                
+                # Convert **bold** text to proper markdown
+                cleaned_commentary = re.sub(r'\*\*(.+?)\*\*', r'**\1**', cleaned_commentary)
+                
+                # Split into sections for better display
+                sections = cleaned_commentary.split('\n\n')
+                
+                for section in sections:
+                    if section.strip():
+                        # Check if it's a header (starts with **)
+                        if section.strip().startswith('**') and section.strip().endswith('**'):
+                            st.markdown(f"### {section.strip().replace('**', '')}")
+                        else:
+                            st.markdown(section.strip())
+                            
+                # Add API status indicator
+                if "AI-powered detailed analysis is temporarily unavailable" in commentary:
+                    st.info("ℹ️ Showing statistical analysis (OpenAI API not configured)")
+                else:
+                    st.success("✅ AI-powered analysis from OpenAI GPT")
+            else:
+                st.info("No commentary generated. Please try refreshing the data.")
     else:
         st.info("No data available for AI analysis. Please adjust your filters.")
 except Exception as e:
-    st.info("AI commentary is temporarily unavailable.")
+    st.error(f"AI commentary error: {str(e)}")
+    st.info("AI commentary is temporarily unavailable. Please check API configuration.")
 
 # IPO News Section
 st.markdown("---")
 st.subheader("📰 IPO News")
 
 try:
-    with st.spinner("Fetching latest IPO news..."):
-        news_df = get_ipo_news(max_results=8, days_back=14)
+    with st.spinner("Fetching latest IPO news from multiple sources..."):
+        # Import enhanced news utility
+        from enhanced_news import get_enhanced_ipo_news
+        
+        news_df = get_enhanced_ipo_news(max_results=8, days_back=14)
         
         if not news_df.empty:
+            # Create clickable links for articles
+            if 'Article Title' in news_df.columns:
+                # Get the raw articles to create proper links
+                from enhanced_news import get_enhanced_ipo_news_raw
+                raw_articles = get_enhanced_ipo_news_raw(max_results=8, days_back=14)
+                
+                # Create a display dataframe with clickable links
+                display_df = news_df.copy()
+                if raw_articles:
+                    for i, article in enumerate(raw_articles[:len(display_df)]):
+                        if i < len(display_df):
+                            title = article.get('title', 'No title')
+                            url = article.get('url', '#')
+                            display_df.iloc[i, display_df.columns.get_loc('Article Title')] = f"[{title}]({url})"
+            
             st.dataframe(
-                news_df,
+                display_df,
                 use_container_width=True,
                 hide_index=True,
                 column_config={
-                    "Article Title": st.column_config.LinkColumn(
+                    "Article Title": st.column_config.TextColumn(
                         "Article Title",
-                        help="Click to read the full article",
-                        display_text=".*"
+                        help="Click to read the full article"
                     ),
                     "Relevance Score": st.column_config.NumberColumn(
                         "Relevance Score",
@@ -553,11 +631,19 @@ try:
                     )
                 }
             )
+            
+            # Add API status indicator
+            if any('reuters.com' in str(row) or 'bloomberg.com' in str(row) for row in display_df.values.flatten()):
+                st.success("✅ Live news data from Tavily/Exa.ai APIs")
+            else:
+                st.info("ℹ️ Showing sample news data (API keys not configured)")
+                
         else:
             st.info("No recent IPO news available at this time.")
             
 except Exception as e:
-    st.info("IPO news is temporarily unavailable.")
+    st.error(f"IPO news is temporarily unavailable: {str(e)}")
+    st.info("Please check API configuration or try again later.")
 
 # Upcoming IPOs Section
 st.markdown("---")
