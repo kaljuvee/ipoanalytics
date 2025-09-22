@@ -26,7 +26,7 @@ st.markdown("""
     .main-header {
         font-size: 2.5rem;
         font-weight: bold;
-        color: #1f77b4;
+        color: #2E8B57;
         text-align: center;
         margin-bottom: 2rem;
     }
@@ -63,7 +63,6 @@ db, fetcher = init_components()
 # Sidebar
 
 # Data refresh section
-st.sidebar.subheader("📊 Data Management")
 
 current_year = datetime.now().year
 selected_timeframe = st.sidebar.selectbox(
@@ -520,6 +519,6 @@ else:
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; color: #666; font-size: 0.9rem;">
-    <p>IPO Map Dashboard | Market data</p>
+    <p>Developed by <a href="https://www.linkedin.com/in/juliankaljuvee/" target="_blank" style="color: #0066cc; text-decoration: none;">Julian Kaljuvee</a> at <a href="https://www.linkedin.com/company/predictive-labs-ltd" target="_blank" style="color: #0066cc; text-decoration: none;">Predictive Labs</a></p>
 </div>
 """, unsafe_allow_html=True)
