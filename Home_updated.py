@@ -475,7 +475,7 @@ st.subheader("📰 IPO News")
 
 try:
     news_data = get_ipo_news()
-    if news_data is not None and len(news_data) > 0:
+    if news_data and len(news_data) > 0:
         # Display news in a nice format
         for article in news_data[:5]:  # Show top 5 articles
             with st.container():
