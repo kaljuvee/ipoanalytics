@@ -3,3 +3,7 @@ yfinance
 plotly
 pandas
 requests
+langchain
+openai
+tavily-python
+sqlalchemy

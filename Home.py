@@ -11,6 +11,10 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
 
 from yfinance_util import IPODataFetcher, format_market_cap, format_percentage
 from database import IPODatabase
+# from global_markets import get_all_countries, get_region_from_country
+from simple_global_loader import load_global_ipo_data
+from ai_commentary import get_ipo_commentary
+from ipo_news import get_ipo_news
 
 # Page configuration
 st.set_page_config(
@@ -79,52 +83,48 @@ else:  # Last 5 years
 
 # Data refresh button
 if st.sidebar.button("🔄 Refresh IPO Data", type="primary"):
-    with st.spinner("Fetching IPO data from market sources..."):
+    with st.spinner("Fetching global IPO data from market sources..."):
         try:
             # Log refresh start
             refresh_start = datetime.now().isoformat()
             
-            # Fetch IPO data for all years in timeframe
+            # Load comprehensive global IPO data
+            records_loaded = load_global_ipo_data()
+            
+            # Also fetch some real US data for recent years
             all_ipo_records = []
-            for year in years_to_include:
+            for year in years_to_include[-2:]:  # Last 2 years only for real data
                 year_records = fetcher.get_nasdaq_nyse_ipos(year=year)
                 if year_records:
                     all_ipo_records.extend(year_records)
             
             ipo_records = all_ipo_records
             
+            # Log successful refresh for global data
+            db.log_refresh(
+                refresh_type="GLOBAL_IPO_DATA_REFRESH",
+                status="SUCCESS",
+                records_processed=records_loaded,
+                started_at=refresh_start
+            )
+            
             if ipo_records:
-                # Insert into database
+                # Insert additional real US data
                 records_inserted = db.insert_ipo_data(ipo_records)
-                
-                # Log successful refresh
-                db.log_refresh(
-                    refresh_type="IPO_DATA_REFRESH",
-                    status="SUCCESS",
-                    records_processed=records_inserted,
-                    started_at=refresh_start
-                )
-                
-                st.sidebar.success(f"✅ Successfully refreshed {records_inserted} IPO records!")
-                st.session_state.data_loaded = True
-                
-                # Force rerun to update the display
-                st.rerun()
-                
+                st.sidebar.success(f"✅ Successfully loaded {records_loaded} global IPO records + {records_inserted} recent US IPOs!")
             else:
-                st.sidebar.warning("⚠️ No IPO data found for the selected year.")
-                db.log_refresh(
-                    refresh_type="IPO_DATA_REFRESH",
-                    status="NO_DATA",
-                    records_processed=0,
-                    started_at=refresh_start
-                )
+                st.sidebar.success(f"✅ Successfully loaded {records_loaded} global IPO records!")
+            
+            st.session_state.data_loaded = True
+            
+            # Force rerun to update the display
+            st.rerun()
                 
         except Exception as e:
             error_msg = str(e)
             st.sidebar.error(f"❌ Error refreshing data: {error_msg}")
             db.log_refresh(
-                refresh_type="IPO_DATA_REFRESH",
+                refresh_type="GLOBAL_IPO_DATA_REFRESH",
                 status="ERROR",
                 records_processed=0,
                 error_message=error_msg,
@@ -513,6 +513,51 @@ else:
         
     else:
         st.warning("No IPO data matches the current filters. Please adjust your filter criteria.")
+
+# AI Commentary Section
+st.markdown("---")
+st.subheader("🤖 AI Market Analysis")
+
+try:
+    if not filtered_df.empty:
+        with st.spinner("Generating AI-powered market insights..."):
+            commentary = get_ipo_commentary(filtered_df, selected_timeframe)
+            st.markdown(commentary)
+    else:
+        st.info("No data available for AI analysis. Please adjust your filters.")
+except Exception as e:
+    st.info("AI commentary is temporarily unavailable.")
+
+# IPO News Section
+st.markdown("---")
+st.subheader("📰 IPO News")
+
+try:
+    with st.spinner("Fetching latest IPO news..."):
+        news_df = get_ipo_news(max_results=8, days_back=14)
+        
+        if not news_df.empty:
+            st.dataframe(
+                news_df,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Article Title": st.column_config.LinkColumn(
+                        "Article Title",
+                        help="Click to read the full article",
+                        display_text=".*"
+                    ),
+                    "Relevance Score": st.column_config.NumberColumn(
+                        "Relevance Score",
+                        format="%.2f"
+                    )
+                }
+            )
+        else:
+            st.info("No recent IPO news available at this time.")
+            
+except Exception as e:
+    st.info("IPO news is temporarily unavailable.")
 
 # Upcoming IPOs Section
 st.markdown("---")
