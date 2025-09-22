@@ -299,15 +299,14 @@ else:
                 'exchange': True
             },
             color_continuous_scale="RdYlGn",
-            color_continuous_midpoint=0,
-            title=""
+            color_continuous_midpoint=0
         )
         
         # Update layout
         fig.update_layout(
             height=800,
             font_size=12,
-            title_font_size=20,
+            showlegend=False,
             coloraxis_colorbar=dict(
                 title="Performance Since IPO",
                 tickformat=".1%"
