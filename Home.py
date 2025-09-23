@@ -171,6 +171,13 @@ def load_ipo_data(years):
         combined_df = pd.concat(all_data, ignore_index=True).drop_duplicates(subset=['ticker'])
         # Apply regional mapping to all data
         combined_df = add_regional_data(combined_df)
+        
+        # Ensure we have all expected regions
+        expected_regions = ['APAC', 'EMEA', 'Americas']
+        for region in expected_regions:
+            if region not in combined_df['region'].values:
+                st.warning(f"⚠️ No data found for {region} region")
+        
         return combined_df
     else:
         return pd.DataFrame()
@@ -348,7 +355,7 @@ if not df.empty:
                 treemap_df['ticker'].astype(str)
             )
             
-            # Format hover data
+            # Format hover data with enhanced information
             treemap_df['hover_text'] = (
                 "<b>" + treemap_df['ticker'] + "</b><br>" +
                 treemap_df['company_name'] + "<br>" +
@@ -357,6 +364,7 @@ if not df.empty:
                 "Exchange: " + treemap_df['exchange'] + "<br>" +
                 "Sector: " + treemap_df['sector'] + "<br>" +
                 "Market Cap: " + treemap_df['market_cap'].apply(format_market_cap) + "<br>" +
+                "IPO Date: " + treemap_df['ipo_date'].astype(str) + "<br>" +
                 "Performance: " + treemap_df['price_change_since_ipo'].apply(format_percentage)
             )
             
@@ -554,23 +562,29 @@ if not df.empty and not filtered_df.empty:
                 avg_perf = filtered_df[filtered_df['sector'] == sector]['price_change_since_ipo'].mean()
                 sector_analysis.append(f"- **{sector}:** {format_percentage(avg_perf)} average performance")
             
-            st.markdown(f"""
-### IPO Market Analysis - {selected_timeframe}
-
-**Market Overview:**  
-Analyzing {len(filtered_df)} IPOs with an average performance of {format_percentage(filtered_df['price_change_since_ipo'].mean())} since listing.
-
-**Regional Performance:**  
-{chr(10).join(regional_analysis)}
-
-**Sector Analysis:**  
-{chr(10).join(sector_analysis)}
-
-**Key Insights:**  
-The performance disparity across regions and sectors reflects varying market conditions, investor sentiment, and economic fundamentals. Strong performers likely benefit from favorable market dynamics and investor confidence, while underperformers may face sector-specific challenges or regional economic pressures.
-
-*Note: AI-powered detailed analysis is temporarily unavailable. This summary provides basic statistical insights.*
-            """)
+            # Display AI commentary with proper markdown formatting
+            st.markdown(f"## IPO Market Analysis - {selected_timeframe}")
+            st.markdown("")
+            
+            st.markdown("**Market Overview:**")
+            st.markdown(f"Analyzing {len(filtered_df)} IPOs with an average performance of {format_percentage(filtered_df['price_change_since_ipo'].mean())} since listing.")
+            st.markdown("")
+            
+            st.markdown("**Regional Performance:**")
+            for analysis in regional_analysis:
+                st.markdown(analysis)
+            st.markdown("")
+            
+            st.markdown("**Sector Analysis:**")
+            for analysis in sector_analysis:
+                st.markdown(analysis)
+            st.markdown("")
+            
+            st.markdown("**Key Insights:**")
+            st.markdown("The performance disparity across regions and sectors reflects varying market conditions, investor sentiment, and economic fundamentals. Strong performers likely benefit from favorable market dynamics and investor confidence, while underperformers may face sector-specific challenges or regional economic pressures.")
+            st.markdown("")
+            
+            st.markdown("*Note: AI-powered detailed analysis is temporarily unavailable. This summary provides basic statistical insights.*")
             st.info("ℹ️ Showing statistical analysis (OpenAI API not configured)")
     except Exception as e:
         st.error(f"Error generating AI commentary: {str(e)}")
