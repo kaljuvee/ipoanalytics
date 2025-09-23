@@ -191,10 +191,21 @@ if not df.empty:
     
     with col1:
         # Regional filter (primary filter)
-        available_regions = sorted(df['region'].unique().tolist())
-        if 'Other' in available_regions:
-            available_regions.remove('Other')
-            available_regions.append('Other')  # Move 'Other' to end
+        # Ensure we have all regions from the database, not just filtered data
+        all_regions = ['APAC', 'EMEA', 'Americas', 'Other']  # Define expected regions
+        available_regions = []
+        
+        # Check which regions actually have data
+        for region in all_regions:
+            if region in df['region'].values:
+                available_regions.append(region)
+        
+        # If no regions found, fall back to unique values from df
+        if not available_regions:
+            available_regions = sorted([r for r in df['region'].unique().tolist() if r is not None])
+            if 'Other' in available_regions:
+                available_regions.remove('Other')
+                available_regions.append('Other')  # Move 'Other' to end
         
         # Create display names for regions
         region_options = [get_region_display_name(region) for region in available_regions]
@@ -211,39 +222,59 @@ if not df.empty:
     
     with col2:
         # Filter by selected regions first
-        region_filtered_df = df[df['region'].isin(selected_regions)]
+        if selected_regions:
+            region_filtered_df = df[df['region'].isin(selected_regions)]
+        else:
+            region_filtered_df = df  # Show all if no regions selected
         
         # Country filter (within selected regions)
         available_countries = [c for c in region_filtered_df['country'].unique().tolist() if c is not None and c != 'Unknown']
         available_countries = sorted(available_countries) if available_countries else []
+        
+        # Smart default selection - limit to top 10 countries to avoid overwhelming UI
+        default_countries = available_countries[:10] if len(available_countries) > 10 else available_countries
+        
         selected_countries = st.multiselect(
             "🏳️ Select Countries",
             options=available_countries,
-            default=available_countries,
-            key="country_filter"
+            default=default_countries,
+            key="country_filter",
+            help=f"Showing countries from selected regions. {len(available_countries)} countries available."
         )
     
     with col3:
         # Exchange filter (within selected countries)
-        country_filtered_df = region_filtered_df[region_filtered_df['country'].isin(selected_countries)]
+        if selected_countries:
+            country_filtered_df = region_filtered_df[region_filtered_df['country'].isin(selected_countries)]
+        else:
+            country_filtered_df = region_filtered_df
+            
         available_exchanges = [e for e in country_filtered_df['exchange'].unique().tolist() if e is not None]
         available_exchanges = sorted(available_exchanges) if available_exchanges else []
+        
+        # Smart default selection for exchanges
+        default_exchanges = available_exchanges[:15] if len(available_exchanges) > 15 else available_exchanges
+        
         selected_exchanges = st.multiselect(
             "🏢 Select Exchanges",
             options=available_exchanges,
-            default=available_exchanges,
-            key="exchange_filter"
+            default=default_exchanges,
+            key="exchange_filter",
+            help=f"Showing exchanges from selected countries. {len(available_exchanges)} exchanges available."
         )
     
     with col4:
-        # Sector filter
+        # Sector filter - use all data for sectors as they span across regions
         available_sectors = [s for s in df['sector'].unique().tolist() if s is not None]
         available_sectors = sorted(available_sectors) if available_sectors else []
+        
+        # Default to all sectors for comprehensive view
         selected_sectors = st.multiselect(
             "🏭 Select Sectors",
             options=available_sectors,
             default=available_sectors,
-            key="sector_filter"
+            key="sector_filter",
+            help=f"All sectors across selected regions. {len(available_sectors)} sectors available."
         )
     
     st.markdown('</div>', unsafe_allow_html=True)
@@ -549,37 +580,46 @@ st.markdown("---")
 st.subheader("📰 IPO News")
 
 try:
-    news_data = get_ipo_news()
-    if news_data is not None and len(news_data) > 0:
-        # Display news in a nice format
-        for article in news_data[:5]:  # Show top 5 articles
-            # Handle both dict and string formats
-            if isinstance(article, dict):
-                title = article.get('title', 'No title')
-                url = article.get('url', '#')
-                summary = article.get('summary', 'No summary available')
-                date = article.get('date', 'No date')
-                source = article.get('source', 'Unknown source')
-                relevance_score = article.get('relevance_score', None)
-            else:
-                # Handle string format or other formats
-                title = str(article)
-                url = '#'
-                summary = 'No summary available'
-                date = 'No date'
-                source = 'Unknown source'
-                relevance_score = None
-            
-            with st.container():
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    st.markdown(f"**[{title}]({url})**")
-                    st.markdown(f"*{summary}*")
-                    st.markdown(f"📅 {date} | 📰 {source}")
-                with col2:
-                    if relevance_score is not None:
-                        st.metric("Relevance", f"{relevance_score:.2f}")
-                st.markdown("---")
+    # Check if API keys are configured
+    import os
+    tavily_key = os.getenv('TAVILY_API_KEY')
+    exa_key = os.getenv('EXA_API_KEY', 'ba4e615f-b7e9-4b91-b83f-591aa0ec5132')  # Use provided key as default
+    
+    if tavily_key or exa_key:
+        news_data = get_ipo_news()
+        if news_data is not None and len(news_data) > 0:
+            st.success(f"✅ Live news data loaded ({len(news_data)} articles)")
+            # Display news in a nice format
+            for article in news_data[:5]:  # Show top 5 articles
+                # Handle both dict and string formats
+                if isinstance(article, dict):
+                    title = article.get('title', 'No title')
+                    url = article.get('url', '#')
+                    summary = article.get('summary', 'No summary available')
+                    date = article.get('date', 'No date')
+                    source = article.get('source', 'Unknown source')
+                    relevance_score = article.get('relevance_score', None)
+                else:
+                    # Handle string format or other formats
+                    title = str(article)
+                    url = '#'
+                    summary = 'No summary available'
+                    date = 'No date'
+                    source = 'Unknown source'
+                    relevance_score = None
+                
+                with st.container():
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        st.markdown(f"**[{title}]({url})**")
+                        st.markdown(f"*{summary}*")
+                        st.markdown(f"📅 {date} | 📰 {source}")
+                    with col2:
+                        if relevance_score is not None:
+                            st.metric("Relevance", f"{relevance_score:.2f}")
+                    st.markdown("---")
+        else:
+            st.warning("⚠️ No news data available from configured APIs")
     else:
         st.info("ℹ️ Showing sample news data (API keys not configured)")
         # Show sample news
