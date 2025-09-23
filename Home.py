@@ -161,25 +161,22 @@ with st.sidebar:
 
 # Load data from database
 def load_ipo_data(years):
-    all_data = []
-    for year in years:
-        year_data = db.get_ipo_data(year=year)
-        if not year_data.empty:
-            all_data.append(year_data)
+    # Load ALL data from database regardless of year to show complete global coverage
+    all_data = db.get_ipo_data()  # Remove year filter to get all records
     
-    if all_data:
-        combined_df = pd.concat(all_data, ignore_index=True).drop_duplicates(subset=['ticker'])
+    if not all_data.empty:
         # Apply regional mapping to all data
-        combined_df = add_regional_data(combined_df)
+        combined_df = add_regional_data(all_data)
         
-        # Ensure we have all expected regions
-        expected_regions = ['APAC', 'EMEA', 'Americas']
-        for region in expected_regions:
-            if region not in combined_df['region'].values:
-                st.warning(f"⚠️ No data found for {region} region")
+        # Show regional distribution for debugging
+        if not combined_df.empty:
+            regional_counts = combined_df['region'].value_counts()
+            st.success(f"✅ Loaded {len(combined_df)} IPOs: " + 
+                      ", ".join([f"{region} ({count})" for region, count in regional_counts.items()]))
         
         return combined_df
     else:
+        st.error("❌ No IPO data found in database")
         return pd.DataFrame()
 
 df = load_ipo_data(years_to_include)
