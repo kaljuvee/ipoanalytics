@@ -79,9 +79,34 @@ class IPODatabase:
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_exchange ON ipo_data (exchange)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_ipo_date ON ipo_data (ipo_date)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_market_cap ON ipo_data (market_cap)')
+
+            # Sign-up table for collecting user emails
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS sign_up (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    email TEXT UNIQUE NOT NULL,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
             
             conn.commit()
             logger.info("Database initialized successfully")
+
+    def insert_signup_email(self, email: str) -> bool:
+        """Insert a unique email into sign_up table"""
+        if not email or '@' not in email:
+            return False
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT OR IGNORE INTO sign_up (email) VALUES (?)
+                ''', (email.strip().lower(),))
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"Error inserting signup email: {str(e)}")
+            return False
     
     def insert_ipo_data(self, ipo_records: List[Dict]) -> int:
         """Insert or update IPO data records"""

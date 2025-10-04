@@ -9,3 +9,5 @@ langchain-community
 openai
 tavily-python
 sqlalchemy
+python-dotenv
+psycopg2-binary

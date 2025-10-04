@@ -18,6 +18,12 @@ from enhanced_regional_mapping import (
     add_regional_data, get_region_display_name, 
     get_countries_by_region, get_exchanges_by_region
 )
+from db_util import (
+    remote_db_available, init_remote_database,
+    get_ipo_data_remote, insert_ipo_records_remote,
+    log_refresh_remote, get_last_refresh_remote,
+    insert_signup_email_remote
+)
 
 # Page configuration
 st.set_page_config(
@@ -83,22 +89,13 @@ db, fetcher = init_components()
 # Main header
 st.markdown('<div class="main-header">IPO Map - Global Market Heatmap</div>', unsafe_allow_html=True)
 
-# Sidebar for data refresh only
+# Sidebar for data refresh and sign-up
 with st.sidebar:
     st.subheader("📊 Data Management")
     
     current_year = datetime.now().year
-    selected_timeframe = st.selectbox(
-        "Select Timeframe",
-        options=["Last 3 years", "Last 5 years"],
-        index=0
-    )
-
-    # Calculate years based on timeframe
-    if selected_timeframe == "Last 3 years":
-        years_to_include = [current_year, current_year - 1, current_year - 2]
-    else:  # Last 5 years
-        years_to_include = [current_year, current_year - 1, current_year - 2, current_year - 3, current_year - 4]
+    selected_timeframe = "Last 3 years"
+    years_to_include = [current_year, current_year - 1, current_year - 2]
 
     # Data refresh button
     if st.button("🔄 Refresh IPO Data", type="primary"):
@@ -119,18 +116,31 @@ with st.sidebar:
                 
                 ipo_records = all_ipo_records
                 
-                # Log successful refresh for global data
-                db.log_refresh(
-                    refresh_type="GLOBAL_IPO_DATA_REFRESH",
-                    status="SUCCESS",
-                    records_processed=records_loaded,
-                    started_at=refresh_start
-                )
+                # Log refresh and store to remote DB if available, otherwise local
+                if remote_db_available():
+                    init_remote_database()
+                    if ipo_records:
+                        insert_ipo_records_remote(ipo_records)
+                    log_refresh_remote(
+                        refresh_type="GLOBAL_IPO_DATA_REFRESH",
+                        status="SUCCESS",
+                        records_processed=records_loaded + len(ipo_records),
+                        started_at=refresh_start
+                    )
+                else:
+                    db.log_refresh(
+                        refresh_type="GLOBAL_IPO_DATA_REFRESH",
+                        status="SUCCESS",
+                        records_processed=records_loaded,
+                        started_at=refresh_start
+                    )
                 
                 if ipo_records:
-                    # Insert additional real US data
-                    records_inserted = db.insert_ipo_data(ipo_records)
-                    st.success(f"✅ Successfully loaded {records_loaded} global IPO records + {records_inserted} recent US IPOs!")
+                    if remote_db_available():
+                        st.success(f"✅ Loaded {records_loaded} global IPOs + {len(ipo_records)} recent US IPOs to remote DB!")
+                    else:
+                        records_inserted = db.insert_ipo_data(ipo_records)
+                        st.success(f"✅ Successfully loaded {records_loaded} global IPO records + {records_inserted} recent US IPOs!")
                 else:
                     st.success(f"✅ Successfully loaded {records_loaded} global IPO records!")
                 
@@ -142,16 +152,41 @@ with st.sidebar:
             except Exception as e:
                 error_msg = str(e)
                 st.error(f"❌ Error refreshing data: {error_msg}")
-                db.log_refresh(
-                    refresh_type="GLOBAL_IPO_DATA_REFRESH",
-                    status="ERROR",
-                    records_processed=0,
-                    error_message=error_msg,
-                    started_at=refresh_start
-                )
+                if remote_db_available():
+                    log_refresh_remote(
+                        refresh_type="GLOBAL_IPO_DATA_REFRESH",
+                        status="ERROR",
+                        records_processed=0,
+                        error_message=error_msg,
+                        started_at=refresh_start
+                    )
+                else:
+                    db.log_refresh(
+                        refresh_type="GLOBAL_IPO_DATA_REFRESH",
+                        status="ERROR",
+                        records_processed=0,
+                        error_message=error_msg,
+                        started_at=refresh_start
+                    )
 
-    # Database stats
-    last_refresh = db.get_last_refresh()
+    # Email sign-up
+    st.markdown("---")
+    st.subheader("📬 Sign up for updates")
+    with st.form(key="signup_form", clear_on_submit=True):
+        email_input = st.text_input("Email address", placeholder="you@example.com")
+        submitted = st.form_submit_button("Sign up")
+        if submitted:
+            if email_input and "@" in email_input:
+                ok = insert_signup_email_remote(email_input) if remote_db_available() else db.insert_signup_email(email_input)
+                if ok:
+                    st.success("Thanks! We'll keep you posted.")
+                else:
+                    st.info("You're already on the list or the email is invalid.")
+            else:
+                st.error("Please enter a valid email.")
+
+    # Database stats (prefer remote)
+    last_refresh = get_last_refresh_remote() if remote_db_available() else db.get_last_refresh()
     if last_refresh:
         st.markdown("---")
         st.subheader("📈 Database Stats")
@@ -162,16 +197,25 @@ with st.sidebar:
 # Load data from database
 @st.cache_data
 def load_ipo_data(years):
+    # Prefer remote DB reads
+    if remote_db_available():
+        frames = []
+        for year in years:
+            year_df = get_ipo_data_remote(year=year)
+            if not year_df.empty:
+                frames.append(year_df)
+        if frames:
+            return pd.concat(frames, ignore_index=True).drop_duplicates(subset=['ticker'])
+        return pd.DataFrame()
+    # Fallback to local DB
     all_data = []
     for year in years:
         year_data = db.get_ipo_data(year=year)
         if not year_data.empty:
             all_data.append(year_data)
-    
     if all_data:
         return pd.concat(all_data, ignore_index=True).drop_duplicates(subset=['ticker'])
-    else:
-        return pd.DataFrame()
+    return pd.DataFrame()
 
 df = load_ipo_data(years_to_include)
 
